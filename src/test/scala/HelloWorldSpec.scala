@@ -1,13 +1,11 @@
-import org.scalatest.Spec
+import org.scalatest.FlatSpec
 import org.scalatest.matchers.ShouldMatchers
-import scala.collection.mutable.Stack
 
-class HelloWorldSpec extends Spec with ShouldMatchers {
+class HelloWorldSpec extends FlatSpec with ShouldMatchers {
 
-  describe("HelloWorld") {
-    val hello = new HelloWorld()
-    it("should say hello") {
-      assert(hello.hello() === "Hello World")
-    }
+  private val hwString = new HelloWorld().hello
+
+  "HelloWorld.hello" should "return the string 'Hello World'" in {
+    hwString should equal ("Hello World")
   }
 }
