@@ -1,37 +1,52 @@
 package katabowling
 
+import scala.collection.mutable.ListBuffer
+
 class BowlingCalculator {
 
   def calculateScore(rolls: String): Int = {
-    innerScore(rolls.toList)
+    // convert the string to a list of Int scores for each roll
+    val rollPoints = convertRollsToInts(rolls);
+    // calculate the score for each frame
+    val frameScores = calculateFrames(rollPoints)
+    // sum the score fo the first 10 frames
+    frameScores.slice(0, 10).sum
   }
 
-  def innerScore(rolls: List[Char], pos: Int = 1, score: Int = 0): Int = {
-    if (pos > 10) {
-      return score
-    }
+  def convertRollsToInts(rolls: String): List[Int] = {
+    rolls.toList.foldLeft(ListBuffer[Int]()) { (res, roll) =>
+      roll match {
+	// the score for a strike is 10
+	case 'X' => res += 10
+	// the score for a miss is 0
+	case '-' => res += 0
+	// the score for a spare is 10 - the previous roll
+	case '/' => res += (10 - res.last)
+	// the score for a normal roll is the number of pins
+	case c   => res += c.toString.toInt
+      }
+    }.toList
+  }
 
+  def calculateFrames(rolls: List[Int]): List[Int] = {
     rolls match {
-      case Nil => score
-      case List('X', 'X')       => { score + 20 }
-      case List('X', _*)        => { score + 10 + innerScore(rolls.slice(1, 3)) + innerScore(rolls.drop(1), pos + 1) }
-      case List(n) if n.isDigit => { score + digitValueOf(n) }
-      case List('-', '-', _*)   => { innerScore(rolls.drop(2), pos + 1, score) }
-      case List(n, '/', _*) if n.isDigit => { innerScore(rolls.drop(2), pos + 1, score + 10 + innerScore(rolls.slice(2, 3))) }
-      case List(n, '-', _*) if n.isDigit => { innerScore(rolls.drop(2), pos + 1, score + digitValueOf(n)) }
-      case List('-', n, _*) if n.isDigit => { innerScore(rolls.drop(2), pos + 1, score + digitValueOf(n)) }
-      case List(n1, n2, _*) if n1.isDigit && n2.isDigit => { innerScore(rolls.drop(2), pos + 1, score + digitValueOf(n1) + digitValueOf(n2)) }
-      case _ => { debugPrint(rolls, pos, score); innerScore(rolls.tail, pos, score) }
+      case Nil => Nil
+      // is this a strike?
+      case 10 :: _ =>
+	// the frame score is the sum of the roll in this frame
+	// and the next 2 rolls
+	rolls.slice(0, 3).sum :: calculateFrames(rolls.drop(1))
+      // is this a spare?
+      case r1 :: r2 :: _ if r1 + r2 == 10 =>
+	// the frame score is the sum of the 2 rolls in this frame
+	// and the next roll
+	rolls.slice(0, 3).sum :: calculateFrames(rolls.drop(2))
+      // this is a normal roll!
+      case _ =>
+	// the frame score is the sum of the 2 rolls in this frame
+	rolls.slice(0, 2).sum :: calculateFrames(rolls.drop(2))
     }
-  }
-
-  def debugPrint(rolls: List[Char], pos: Int, score: Int) = {
-    println("Non matching '" +  rolls + "' @ " +  pos + " with score " + score)
-  }
-
-  def digitValueOf(c: Char): Int = {
-    c - '0'
-  }
+  }  
 }
 
 object BowlingCalculator extends BowlingCalculator {}
